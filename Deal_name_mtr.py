@@ -23,7 +23,6 @@ Result=[]
 path = 'E:/Industey-log-data/name/Desktop/高压测试/'#可以把测试样例下载下来改成时间文件夹前面的地址
 def read_log():
     list1=[]
-
     list3=[]
     log = open(fileaddresstlog, 'r')
     count=0
@@ -63,7 +62,6 @@ def read_log():
         count=count+1
 #        , list3, list4, list5, list6, list7, list8, list9, list10, len(logline)
     return list1,list3#代表时间、电流、电压、Mod
-
 # 文件列表
 files = []
 files_name=[]
@@ -184,12 +182,25 @@ def judge_new_or_nor(Name):
         return 1
     else:
         return 0
+    """
+    1. 一次性把文件名cut出来形成['高压测试','20220207_084509']
+    2. 使用Python库的datetime的strptime函数直接转换时间
+    3. 最新的时间要存盘的, 程序初始化从文件中得到时间(now_year这个变量)
+    4. 2个datetime可以直接比较的
+    """
 if __name__ == '__main__':
     r=0
+    latest_date = datetime(1970, 1, 1, 0, 0, 0)   # 初始一个古老时间
+    max_date = datetime(1970, 1, 1, 0, 0, 0)   # 初始一个古老时间
+    with open('E:/Industey-log-data/name/Desktop/time_temp_mtr.txt', 'r', encoding='utf-8') as file:
+        content1 = file.readline()   # 从文件中读取存储的时间xxa
+        latest_date = datetime.strptime(content1, "%Y-%m-%d %H:%M:%S")
     for i in range(len(files)):
         fileaddresstlog = files[i]
         filename = files_name[i]
-        if judge_new_or_nor(filename) == 1:
+        #if judge_new_or_nor(filename) == 1:
+        file_date = datetime.strptime(filename[4:19], '%Y%m%d_%H%M%S')
+        if file_date > latest_date:  # 新时间文件可以上传
             List1,List2=read_log()
             # ID.append(List3)
             # CAP.append(List3)
@@ -203,6 +214,11 @@ if __name__ == '__main__':
     #        , ID, CAP, Ave_ele_Current, Ave_volt, Hig_ele_Current, Hig_volt, Conjection, Result, logline_length
             Fin_MOD=Formulate(List1,List2)
             Update_gdf_CouchDB(Fin_MOD)
+            Update_gdf_json(Fin_MOD)
+            if file_date > max_date:
+                max_date = file_date
+    with open('time_temp_mtr.txt', 'w', encoding='utf-8') as file:
+        file.write(max_date.strftime("%Y-%m-%d %H:%M:%S"))
     # ID=input("请输入ID：")
     # time,elec,volt,date=extract(ID)
     # PLOT_ELE(time,elec,date)
